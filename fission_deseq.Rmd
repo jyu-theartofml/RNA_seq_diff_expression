@@ -1,0 +1,158 @@
+---
+title: "Fission RNAseq analysis"
+author: "Jenny Yu"
+date: "July 18, 2017"
+output: 
+  md_document:
+    variant: markdown_github
+---
+## The fission dataset from Bioconductor will be used for time point analysis. This a an experiment where 2 groups of fission yeast, WT and mutant (_atf21_ deletion) undergo oxidative stress. RNA-seq was performed at 6 time points to measure gene expression levels.
+
+#####Reference: https://f1000researchdata.s3.amazonaws.com/manuscripts/9994/54602c98-5b2c-4d9d-9004-4e1f2c4e52c6_7035_-_michael_love_v2.pdf?doi=10.12688/f1000research.7035.2
+```{r import}
+library(fission)
+data(fission)
+```
+
+### After importing the SummarizedExperiment dataset fission, view the columns and row values
+
+
+
+```{r view, echo=TRUE}
+colData(fission)
+rowData(fission)
+```
+
+### view different groups in this experiment
+You can also embed plots, for example:
+
+```{r view2}
+fission$strain
+```
+
+### Construct DESeqDataset Object for downstream analysis in DESeq2 library
+```{r}
+library("genefilter")
+library(DESeq2)
+
+#design refers to variables for differential expression (including interaction effect)
+fission_dsd<-DESeqDataSet(fission, design = ~ strain + minute + strain:minute)
+
+```
+ 
+### the rlog-transformed function transforms count data to homoskedastic distribution
+```{r}
+rld <- rlog(fission_dsd)
+```
+### Calculate sample similarity using dist() function to obtain Euclidean distance between samples.
+#### Note: dist() expects the different samples to be rows of the matrix.
+
+```{r}
+similarity_matrix<-dist(t(assay(rld)))
+```
+### Visualize similarity/distance using heat map
+```{r, fig.cap='Figure 1.Similarity matrix of samples. Value of 0 indicates the most similar'}
+library(pheatmap)
+library("RColorBrewer")
+
+dist_matrix <- as.matrix( similarity_matrix)
+#rename rows to show treatment group description
+rownames(dist_matrix ) <- paste( rld$strain, rld$minute, sep="-" )
+colnames(dist_matrix ) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Purples")) )(255)
+pheatmap(dist_matrix,
+         clustering_distance_rows=similarity_matrix,
+         clustering_distance_cols=similarity_matrix,
+         col=colors)
+
+
+```
+### Use PCA to look at data in low dimension -  plotPCA() produces a Principal Component Analysis (PCA) plot of the counts in object.
+
+```{r, fig.cap='Figure 2.PCA plot of the counts in dataset with respect to strain and time point'}
+library(ggplot2)
+#intgroup is variables of interest
+
+pcadata <- plotPCA(rld,intgroup = c( "strain", "minute"), returnData=TRUE)
+percentVar <- round(100 * attr(pcadata, "percentVar"))
+ggplot(pcadata, aes(PC1, PC2, color=minute, shape=strain)) + geom_point(size=3) +xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance"))
+```
+```{r, fig.cap='Figure 3. PCA plot of the top 100 genes selected by highest variances'}
+library("pcaExplorer")
+groups=colData(rld)$strain
+cols <- scales::hue_pal()(2)[groups]
+#don't use row names, too many genes
+genespca(rld,ntop=100,
+         choices = c(1,2),
+         arrowColors=cols,groupNames=groups,
+         alpha = 0.3,
+         useRownamesAsLabels=F,
+         varname.size = 4
+        )
+```
+
+
+
+
+### In the two PCA plots, there does not seem to be a difference between the mutant and WT representations, but the time point data show distinct clustering. This is because the first PCA plot corresponds to aggregation of all genes in the data. To look at the difference of mutant vs. WT, we can perform differential expression analysis on the count data matrix to gain more insights.
+
+### Use likelyhood ratio test (LRT) to test for genes expressing strain-specific diff. over time course (i.e., interaction term strain:minute)
+```{r fig.cap = "Figure 4. Gene SPBC2F12.09c had the most significant difference in expression due to strain condition over time"}
+diff_timepoint<- DESeq(fission_dsd, test="LRT", reduced = ~ strain + minute)
+class(diff_timepoint)
+#to show the data table
+timepoint_result<-results(diff_timepoint)
+class(timepoint_result)
+
+timepoint_result$symbol<-mcols(diff_timepoint)$symbol
+head(timepoint_result[order(timepoint_result$padj),],4)
+#plotCounts take DESeqdataset object
+data <- plotCounts(diff_timepoint, which.min(timepoint_result$padj),
+                   intgroup=c("minute","strain"), returnData=TRUE)
+#name of the gene with the smallest padj val
+genename<- rownames(timepoint_result[which.min(timepoint_result$padj),])
+
+ggplot(data, aes(x=minute, y=count, color=strain, group=strain)) +
+  geom_point() + stat_smooth(se=FALSE,method="loess") + scale_y_log10()+ggtitle(sprintf("Count for top gene %s as function of time ", genename))
+
+```
+## Obtain log2fold change at the individual timepoints.
+```{r, fig.cap='Figure 5.The Log2 change of the mutant group vs. WT for top gene SPBC2F12.09C'}
+resultsNames(diff_timepoint)
+tp15 <- results(diff_timepoint, name="strainmut.minute15", test="Wald")[genename,]
+tp30<-results(diff_timepoint, name="strainmut.minute30", test="Wald")[genename,]
+tp60<-results(diff_timepoint, name="strainmut.minute60", test="Wald")[genename,]
+tp120<-results(diff_timepoint, name="strainmut.minute120", test="Wald")[genename,]
+tp180<-results(diff_timepoint, name="strainmut.minute180", test="Wald")[genename,]
+
+log2_change<-c(tp15$log2FoldChange, tp30$log2FoldChange, tp60$log2FoldChange, tp120$log2FoldChange, tp180$log2FoldChange)
+timepoint<-c(15,30,60,120,180)
+se<-c(tp15$lfcSE, tp30$lfcSE, tp60$lfcSE, tp120$lfcSE,tp180$lfcSE)
+time_data<-data.frame(timepoint, log2_change,se)
+
+ggplot(time_data,aes(x=timepoint, y=log2_change))+geom_point(color='#336666')+geom_errorbar(aes(ymin=time_course-se, ymax=time_course+se), width=.1,color='#336666')+geom_line(color='#336666')+
+  ggtitle(sprintf("Log2 fold change for gene %s between mutant and WT over time", genename))
+
+
+```
+
+## Cluster top10 significant Genes based on log2fold change values 
+
+```{r, fig.cap='Figure 6. Heat map of gene clustering based on log2 change of gene expression'}
+weights<- coef(diff_timepoint)
+colnames(weights)
+#interested in significantly different genes
+topGenes<-head(order(timepoint_result$padj),10)
+#get the coefficients of the top genes
+mat<-weights[topGenes, -c(1,2)]
+thr <- 4
+mat[mat < -thr] <- -thr
+mat[mat > thr] <- thr
+pheatmap(mat, breaks=seq(from=-thr, to=thr, length=101),cluster_col=F)
+
+```
+```{r}
+sessionInfo()
+```
+
