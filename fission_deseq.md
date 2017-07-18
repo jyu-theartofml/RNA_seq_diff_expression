@@ -112,7 +112,7 @@ ggplot(pcadata, aes(PC1, PC2, color=minute, shape=strain)) + geom_point(size=3) 
   ylab(paste0("PC2: ",percentVar[2],"% variance"))
 ```
 
-![Figure 2.PCA plot of the counts in dataset with respect to strain and time point](fission_deseq_files/figure-markdown_github/unnamed-chunk-5-1.png)
+![Figure 2.PCA plot of the counts in dataset with respect to strain and time point](unnamed-chunk-5-1.png)
 
 ``` r
 library("pcaExplorer")
@@ -128,7 +128,7 @@ genespca(rld,ntop=100,
         )
 ```
 
-![Figure 3. PCA plot of the top 100 genes selected by highest variances](fission_deseq_files/figure-markdown_github/unnamed-chunk-6-1.png)
+![Figure 3. PCA plot of the top 100 genes selected by highest variances](unnamed-chunk-6-1.png)
 
 ### In the two PCA plots, there does not seem to be a difference between the mutant and WT representations, but the time point data show distinct clustering. This is because the first PCA plot corresponds to aggregation of all genes in the data. To look at the difference of mutant vs. WT, we can perform differential expression analysis on the count data matrix to gain more insights.
 
@@ -200,7 +200,7 @@ ggplot(data, aes(x=minute, y=count, color=strain, group=strain)) +
   geom_point() + stat_smooth(se=FALSE,method="loess") + scale_y_log10()+ggtitle(sprintf("Count for top gene %s as function of time ", genename))
 ```
 
-![Figure 4. Gene SPBC2F12.09c had the most significant difference in expression due to strain condition over time](fission_deseq_files/figure-markdown_github/unnamed-chunk-7-1.png) \#\# Obtain log2fold change at the individual timepoints.
+![Figure 4. Gene SPBC2F12.09c had the most significant difference in expression due to strain condition over time](unnamed-chunk-7-1.png) \#\# Obtain log2fold change at the individual timepoints.
 
 ``` r
 resultsNames(diff_timepoint)
@@ -227,7 +227,7 @@ ggplot(time_data,aes(x=timepoint, y=log2_change))+geom_point(color='#336666')+ge
   ggtitle(sprintf("Log2 fold change for gene %s between mutant and WT over time", genename))
 ```
 
-![Figure 5.The Log2 change of the mutant group vs. WT for top gene SPBC2F12.09C](fission_deseq_files/figure-markdown_github/unnamed-chunk-8-1.png)
+![Figure 5.The Log2 change of the mutant group vs. WT for top gene SPBC2F12.09C](unnamed-chunk-8-1.png)
 
 Cluster top10 significant Genes based on log2fold change values.
 ----------------------------------------------------------------
@@ -253,7 +253,7 @@ mat[mat > thr] <- thr
 pheatmap(mat, breaks=seq(from=-thr, to=thr, length=101),cluster_col=F)
 ```
 
-![Figure 6. Heat map of gene clustering based on log2 change of gene expression](fission_deseq_files/figure-markdown_github/unnamed-chunk-9-1.png)
+![Figure 6. Heat map of gene clustering based on log2 change of gene expression](unnamed-chunk-9-1.png)
 
 ``` r
 sessionInfo()
