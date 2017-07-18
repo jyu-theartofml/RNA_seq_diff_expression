@@ -100,7 +100,7 @@ pheatmap(dist_matrix,
          col=colors)
 ```
 
-![Figure 1.Similarity matrix of samples. Value of 0 indicates the most similar](fission_deseq_files/figure-markdown_github/unnamed-chunk-4-1.png) \#\#\# Use PCA to look at data in low dimension - plotPCA() produces a Principal Component Analysis (PCA) plot of the counts in object.
+![Figure 1.Similarity matrix of samples. Value of 0 indicates the most similar](unnamed-chunk-4-1.png) \#\#\# Use PCA to look at data in low dimension - plotPCA() produces a Principal Component Analysis (PCA) plot of the counts in object.
 
 ``` r
 library(ggplot2)
