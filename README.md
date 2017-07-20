@@ -5,6 +5,87 @@ The fission dataset from Bioconductor is collected from an experiment where 2 gr
 
 ``` r
 library(fission)
+```
+
+    ## Loading required package: SummarizedExperiment
+
+    ## Loading required package: GenomicRanges
+
+    ## Loading required package: stats4
+
+    ## Loading required package: BiocGenerics
+
+    ## Loading required package: parallel
+
+    ## 
+    ## Attaching package: 'BiocGenerics'
+
+    ## The following objects are masked from 'package:parallel':
+    ## 
+    ##     clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
+    ##     clusterExport, clusterMap, parApply, parCapply, parLapply,
+    ##     parLapplyLB, parRapply, parSapply, parSapplyLB
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     IQR, mad, sd, var, xtabs
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     anyDuplicated, append, as.data.frame, cbind, colMeans,
+    ##     colnames, colSums, do.call, duplicated, eval, evalq, Filter,
+    ##     Find, get, grep, grepl, intersect, is.unsorted, lapply,
+    ##     lengths, Map, mapply, match, mget, order, paste, pmax,
+    ##     pmax.int, pmin, pmin.int, Position, rank, rbind, Reduce,
+    ##     rowMeans, rownames, rowSums, sapply, setdiff, sort, table,
+    ##     tapply, union, unique, unsplit, which, which.max, which.min
+
+    ## Loading required package: S4Vectors
+
+    ## 
+    ## Attaching package: 'S4Vectors'
+
+    ## The following object is masked from 'package:base':
+    ## 
+    ##     expand.grid
+
+    ## Loading required package: IRanges
+
+    ## Loading required package: GenomeInfoDb
+
+    ## Loading required package: Biobase
+
+    ## Welcome to Bioconductor
+    ## 
+    ##     Vignettes contain introductory material; view with
+    ##     'browseVignettes()'. To cite Bioconductor, see
+    ##     'citation("Biobase")', and for packages 'citation("pkgname")'.
+
+    ## Loading required package: DelayedArray
+
+    ## Loading required package: matrixStats
+
+    ## Warning: package 'matrixStats' was built under R version 3.4.1
+
+    ## 
+    ## Attaching package: 'matrixStats'
+
+    ## The following objects are masked from 'package:Biobase':
+    ## 
+    ##     anyMissing, rowMedians
+
+    ## 
+    ## Attaching package: 'DelayedArray'
+
+    ## The following objects are masked from 'package:matrixStats':
+    ## 
+    ##     colMaxs, colMins, colRanges, rowMaxs, rowMins, rowRanges
+
+    ## The following object is masked from 'package:base':
+    ## 
+    ##     apply
+
+``` r
 data(fission)
 ```
 
@@ -63,6 +144,16 @@ fission$strain
 
 ``` r
 library("genefilter")
+```
+
+    ## 
+    ## Attaching package: 'genefilter'
+
+    ## The following objects are masked from 'package:matrixStats':
+    ## 
+    ##     rowSds, rowVars
+
+``` r
 library(DESeq2)
 
 #design refers to variables for differential expression (including interaction effect)
@@ -87,6 +178,11 @@ similarity_matrix<-dist(t(assay(rld)))
 
 ``` r
 library(pheatmap)
+```
+
+    ## Warning: package 'pheatmap' was built under R version 3.4.1
+
+``` r
 library("RColorBrewer")
 
 dist_matrix <- as.matrix( similarity_matrix)
@@ -100,7 +196,9 @@ pheatmap(dist_matrix,
          col=colors)
 ```
 
-![Figure 1.Similarity matrix of samples. Value of 0 indicates the most similar](unnamed-chunk-4-1.png) \#\#\# Use PCA to look at data in low dimension - plotPCA() produces a Principal Component Analysis (PCA) plot of the counts in object.
+![Figure 1.Similarity matrix of samples. Value of 0 indicates the most similar](unnamed-chunk-4-1.png)
+
+### Use PCA to look at data in low dimension - plotPCA() produces a Principal Component Analysis (PCA) plot of the counts in object.
 
 ``` r
 library(ggplot2)
@@ -116,6 +214,11 @@ ggplot(pcadata, aes(PC1, PC2, color=minute, shape=strain)) + geom_point(size=3) 
 
 ``` r
 library("pcaExplorer")
+```
+
+    ## 
+
+``` r
 groups=colData(rld)$strain
 cols <- scales::hue_pal()(2)[groups]
 #don't use row names, too many genes
@@ -190,17 +293,29 @@ head(timepoint_result[order(timepoint_result$padj),],4)
     ## SPAC1002.17c 3.466817e-04        urg2
 
 ``` r
-#plotCounts take DESeqdataset object
-data <- plotCounts(diff_timepoint, which.min(timepoint_result$padj),
-                   intgroup=c("minute","strain"), returnData=TRUE)
 #name of the gene with the smallest padj val
-genename<- rownames(timepoint_result[which.min(timepoint_result$padj),])
-
-ggplot(data, aes(x=minute, y=count, color=strain, group=strain)) +
-  geom_point() + stat_smooth(se=FALSE,method="loess") + scale_y_log10()+ggtitle(sprintf("Count for top gene %s as function of time ", genename))
+rownames(timepoint_result[which.min(timepoint_result$padj),])
 ```
 
-![Figure 4. Gene SPBC2F12.09c had the most significant difference in expression due to strain condition over time](unnamed-chunk-7-1.png) \#\# Obtain log2fold change at the individual timepoints.
+    ## [1] "SPBC2F12.09c"
+
+``` r
+#As shown above, the top gene SPBC2F12.09c corresponds to the atf21 gene that's been mutated in this experiment. Let's look at other genes affected by this mutant, namely the one that has the most significant adjusted p-value after atf21.
+gene_id<-rownames(timepoint_result[order(timepoint_result$padj),][2,])
+genename<-timepoint_result[gene_id,"symbol"]
+
+#plotCounts take DESeqdataset object
+data <- plotCounts(diff_timepoint, gene_id,
+        intgroup=c("minute","strain"),returnData=TRUE)
+
+
+ggplot(data, aes(x=minute, y=count, color=strain, group=strain)) +
+  geom_point() + stat_smooth(se=FALSE,method="loess") + scale_y_log10()+ggtitle(sprintf("Count for gene %s as function of time ", genename))
+```
+
+![Figure 4. Gene SPBC2F12.09c had the most significant difference in expression due to strain condition over time](unnamed-chunk-7-1.png)
+
+### Urg3 stands for Uracil Regulatable Gene. Its transcript levels increases in response to uracil in yeast organisms.To better compare the expression difference between WT and mutant, log2fold changes at the individual timepoints are examined.
 
 ``` r
 resultsNames(diff_timepoint)
@@ -212,25 +327,25 @@ resultsNames(diff_timepoint)
     ## [10] "strainmut.minute60"  "strainmut.minute120" "strainmut.minute180"
 
 ``` r
-tp15 <- results(diff_timepoint, name="strainmut.minute15", test="Wald")[genename,]
-tp30<-results(diff_timepoint, name="strainmut.minute30", test="Wald")[genename,]
-tp60<-results(diff_timepoint, name="strainmut.minute60", test="Wald")[genename,]
-tp120<-results(diff_timepoint, name="strainmut.minute120", test="Wald")[genename,]
-tp180<-results(diff_timepoint, name="strainmut.minute180", test="Wald")[genename,]
+tp15 <- results(diff_timepoint, name="strainmut.minute15", test="Wald")[gene_id,]
+tp30<-results(diff_timepoint, name="strainmut.minute30", test="Wald")[gene_id,]
+tp60<-results(diff_timepoint, name="strainmut.minute60", test="Wald")[gene_id,]
+tp120<-results(diff_timepoint, name="strainmut.minute120", test="Wald")[gene_id,]
+tp180<-results(diff_timepoint, name="strainmut.minute180", test="Wald")[gene_id,]
 
 log2_change<-c(tp15$log2FoldChange, tp30$log2FoldChange, tp60$log2FoldChange, tp120$log2FoldChange, tp180$log2FoldChange)
-timepoint<-c(15,30,60,120,180)
+Minute<-c(15,30,60,120,180)
 se<-c(tp15$lfcSE, tp30$lfcSE, tp60$lfcSE, tp120$lfcSE,tp180$lfcSE)
-time_data<-data.frame(timepoint, log2_change,se)
+time_data<-data.frame(Minute, log2_change,se)
 
-ggplot(time_data,aes(x=timepoint, y=log2_change))+geom_point(color='#336666')+geom_errorbar(aes(ymin=time_course-se, ymax=time_course+se), width=.1,color='#336666')+geom_line(color='#336666')+
+ggplot(time_data,aes(x=Minute, y=log2_change))+geom_point(color='#336666')+geom_errorbar(aes(ymin=log2_change-se, ymax=log2_change+se), width=.1,color='#336666')+geom_line(color='#336666')+
   ggtitle(sprintf("Log2 fold change for gene %s between mutant and WT over time", genename))
 ```
 
-![Figure 5.The Log2 change of the mutant group vs. WT for top gene SPBC2F12.09C](unnamed-chunk-8-1.png)
+![Figure 5.The Log2 change of the mutant group over WT for gene urg3](unnamed-chunk-8-1.png)
 
-Cluster top10 significant Genes based on log2fold change values.
-----------------------------------------------------------------
+Cluster top10 significant Genes based on log2fold change values. Note that this heatmap doesn't take into account the adjusted P-values and its associated confidence in the log2fold change detected (Gene id SPAC1002.18 corresponds to the Urg3 gene).
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ``` r
 weights<- coef(diff_timepoint)
@@ -243,17 +358,19 @@ colnames(weights)
     ## [10] "strainmut.minute60"  "strainmut.minute120" "strainmut.minute180"
 
 ``` r
-#interested in significantly different genes
+#interested in significantly different genes. Sort to get the indices
 topGenes<-head(order(timepoint_result$padj),10)
 #get the coefficients of the top genes
 mat<-weights[topGenes, -c(1,2)]
 thr <- 4
 mat[mat < -thr] <- -thr
 mat[mat > thr] <- thr
-pheatmap(mat, breaks=seq(from=-thr, to=thr, length=101),cluster_col=F)
+pheatmap(mat, breaks=seq(from=-thr, to=thr, length=100),cluster_col=F)
 ```
 
 ![Figure 6. Heat map of gene clustering based on log2 change of gene expression](unnamed-chunk-9-1.png)
+
+### The bottom 4 rows of the heatmap shows genes that exhibit the biggest log2fold change difference between the baseline WT (bottome left) time course and the Mutant group (bottome right). Again, this doesn't take into account the adjusted p-value.
 
 ``` r
 sessionInfo()
@@ -266,73 +383,73 @@ sessionInfo()
     ## Matrix products: default
     ## 
     ## locale:
-    ## [1] C
+    ## [1] LC_COLLATE=English_United States.1252 
+    ## [2] LC_CTYPE=English_United States.1252   
+    ## [3] LC_MONETARY=English_United States.1252
+    ## [4] LC_NUMERIC=C                          
+    ## [5] LC_TIME=English_United States.1252    
     ## 
     ## attached base packages:
-    ##  [1] grid      parallel  stats4    stats     graphics  grDevices utils    
-    ##  [8] datasets  methods   base     
+    ## [1] parallel  stats4    stats     graphics  grDevices utils     datasets 
+    ## [8] methods   base     
     ## 
     ## other attached packages:
-    ##  [1] pcaExplorer_2.2.0          factoextra_1.0.4.999      
-    ##  [3] ggbiplot_0.55              scales_0.4.1              
-    ##  [5] plyr_1.8.4                 devtools_1.13.2           
-    ##  [7] rmarkdown_1.6              DESeq2_1.16.1             
-    ##  [9] genefilter_1.58.1          BiocInstaller_1.26.0      
-    ## [11] ggplot2_2.2.1              RColorBrewer_1.1-2        
-    ## [13] pheatmap_1.0.8             fission_0.110.0           
-    ## [15] SummarizedExperiment_1.6.3 DelayedArray_0.2.7        
-    ## [17] matrixStats_0.52.2         Biobase_2.36.2            
-    ## [19] GenomicRanges_1.28.3       GenomeInfoDb_1.12.2       
-    ## [21] IRanges_2.10.2             S4Vectors_0.14.3          
-    ## [23] BiocGenerics_0.22.0       
+    ##  [1] pcaExplorer_2.2.0          ggplot2_2.2.1             
+    ##  [3] RColorBrewer_1.1-2         pheatmap_1.0.8            
+    ##  [5] DESeq2_1.16.1              genefilter_1.58.1         
+    ##  [7] fission_0.110.0            SummarizedExperiment_1.6.3
+    ##  [9] DelayedArray_0.2.7         matrixStats_0.52.2        
+    ## [11] Biobase_2.36.2             GenomicRanges_1.28.3      
+    ## [13] GenomeInfoDb_1.12.2        IRanges_2.10.2            
+    ## [15] S4Vectors_0.14.3           BiocGenerics_0.22.0       
+    ## [17] rmarkdown_1.6             
     ## 
     ## loaded via a namespace (and not attached):
-    ##  [1] colorspace_1.3-2        rprojroot_1.2          
-    ##  [3] htmlTable_1.9           XVector_0.16.0         
-    ##  [5] base64enc_0.1-3         d3heatmap_0.6.1.1      
-    ##  [7] topGO_2.28.0            DT_0.2                 
-    ##  [9] ggrepel_0.6.5           bit64_0.9-7            
-    ## [11] AnnotationDbi_1.38.1    codetools_0.2-15       
-    ## [13] splines_3.4.0           doParallel_1.0.10      
-    ## [15] geneplotter_1.54.0      knitr_1.16             
-    ## [17] jsonlite_1.5            Formula_1.2-2          
-    ## [19] gridBase_0.4-7          annotate_1.54.0        
-    ## [21] cluster_2.0.6           GO.db_3.4.1            
-    ## [23] png_0.1-7               graph_1.54.0           
-    ## [25] shinydashboard_0.6.1    shiny_1.0.3            
-    ## [27] compiler_3.4.0          httr_1.2.1             
-    ## [29] GOstats_2.42.0          backports_1.1.0        
-    ## [31] assertthat_0.2.0        Matrix_1.2-9           
-    ## [33] lazyeval_0.2.0          limma_3.32.3           
-    ## [35] acepack_1.4.1           htmltools_0.3.6        
-    ## [37] tools_3.4.0             Category_2.42.1        
-    ## [39] gtable_0.2.0            GenomeInfoDbData_0.99.0
-    ## [41] reshape2_1.4.2          Rcpp_0.12.12           
-    ## [43] NMF_0.20.6              iterators_1.0.8        
-    ## [45] stringr_1.2.0           mime_0.5               
-    ## [47] rngtools_1.2.4          XML_3.98-1.9           
-    ## [49] shinyAce_0.2.1          zlibbioc_1.22.0        
-    ## [51] shinyBS_0.61            RBGL_1.52.0            
-    ## [53] SparseM_1.77            yaml_2.1.14            
-    ## [55] curl_2.7                memoise_1.1.0          
-    ## [57] gridExtra_2.2.1         pkgmaker_0.22          
-    ## [59] biomaRt_2.32.1          rpart_4.1-11           
-    ## [61] latticeExtra_0.6-28     stringi_1.1.5          
-    ## [63] RSQLite_2.0             highr_0.6              
-    ## [65] foreach_1.4.3           checkmate_1.8.3        
-    ## [67] BiocParallel_1.10.1     rlang_0.1.1            
-    ## [69] pkgconfig_2.0.1         bitops_1.0-6           
-    ## [71] evaluate_0.10.1         lattice_0.20-35        
-    ## [73] htmlwidgets_0.9         labeling_0.3           
-    ## [75] bit_1.1-12              AnnotationForge_1.18.0 
-    ## [77] GSEABase_1.38.0         magrittr_1.5           
-    ## [79] R6_2.2.2                Hmisc_4.0-3            
-    ## [81] DBI_0.7                 foreign_0.8-67         
-    ## [83] withr_1.0.2             survival_2.41-3        
-    ## [85] RCurl_1.95-4.8          nnet_7.3-12            
-    ## [87] tibble_1.3.3            locfit_1.5-9.1         
-    ## [89] data.table_1.10.4       blob_1.1.0             
-    ## [91] git2r_0.18.0            threejs_0.2.2          
-    ## [93] digest_0.6.12           xtable_1.8-2           
-    ## [95] tidyr_0.6.3             httpuv_1.3.5           
-    ## [97] munsell_0.4.3           registry_0.3
+    ##  [1] Category_2.42.1         bitops_1.0-6           
+    ##  [3] bit64_0.9-7             doParallel_1.0.10      
+    ##  [5] threejs_0.2.2           rprojroot_1.2          
+    ##  [7] tools_3.4.0             backports_1.1.0        
+    ##  [9] R6_2.2.2                DT_0.2                 
+    ## [11] rpart_4.1-11            Hmisc_4.0-3            
+    ## [13] DBI_0.7                 lazyeval_0.2.0         
+    ## [15] colorspace_1.3-2        nnet_7.3-12            
+    ## [17] gridExtra_2.2.1         bit_1.1-12             
+    ## [19] compiler_3.4.0          graph_1.54.0           
+    ## [21] htmlTable_1.9           SparseM_1.77           
+    ## [23] pkgmaker_0.22           d3heatmap_0.6.1.1      
+    ## [25] labeling_0.3            topGO_2.28.0           
+    ## [27] scales_0.4.1            checkmate_1.8.3        
+    ## [29] RBGL_1.52.0             NMF_0.20.6             
+    ## [31] stringr_1.2.0           digest_0.6.12          
+    ## [33] shinyBS_0.61            foreign_0.8-67         
+    ## [35] AnnotationForge_1.18.0  XVector_0.16.0         
+    ## [37] base64enc_0.1-3         pkgconfig_2.0.1        
+    ## [39] htmltools_0.3.6         limma_3.32.3           
+    ## [41] highr_0.6               htmlwidgets_0.9        
+    ## [43] rlang_0.1.1             RSQLite_2.0            
+    ## [45] shiny_1.0.3             GOstats_2.42.0         
+    ## [47] jsonlite_1.5            BiocParallel_1.10.1    
+    ## [49] acepack_1.4.1           RCurl_1.95-4.8         
+    ## [51] magrittr_1.5            GO.db_3.4.1            
+    ## [53] GenomeInfoDbData_0.99.0 Formula_1.2-2          
+    ## [55] Matrix_1.2-9            Rcpp_0.12.12           
+    ## [57] munsell_0.4.3           stringi_1.1.5          
+    ## [59] yaml_2.1.14             zlibbioc_1.22.0        
+    ## [61] plyr_1.8.4              grid_3.4.0             
+    ## [63] blob_1.1.0              ggrepel_0.6.5          
+    ## [65] shinydashboard_0.6.1    lattice_0.20-35        
+    ## [67] splines_3.4.0           annotate_1.54.0        
+    ## [69] locfit_1.5-9.1          knitr_1.16             
+    ## [71] rngtools_1.2.4          reshape2_1.4.2         
+    ## [73] geneplotter_1.54.0      codetools_0.2-15       
+    ## [75] biomaRt_2.32.1          XML_3.98-1.9           
+    ## [77] evaluate_0.10.1         latticeExtra_0.6-28    
+    ## [79] data.table_1.10.4       foreach_1.4.3          
+    ## [81] png_0.1-7               httpuv_1.3.5           
+    ## [83] tidyr_0.6.3             gtable_0.2.0           
+    ## [85] gridBase_0.4-7          mime_0.5               
+    ## [87] xtable_1.8-2            survival_2.41-3        
+    ## [89] tibble_1.3.3            iterators_1.0.8        
+    ## [91] registry_0.3            AnnotationDbi_1.38.1   
+    ## [93] memoise_1.1.0           cluster_2.0.6          
+    ## [95] GSEABase_1.38.0         shinyAce_0.2.1
