@@ -367,7 +367,7 @@ pheatmap(mat, breaks=seq(from=-thr, to=thr, length=100),cluster_col=F)
 
 ![Figure 6. Heat map of gene clustering based on log2 change of gene expression](unnamed-chunk-9-1.png)
 
-### The bottom 4 rows of the heatmap shows genes that exhibit the biggest log2fold change difference between the baseline WT (bottome left) time course and the Mutant group (bottome right). Again, this doesn't take into account the adjusted p-value.
+### The bottom 4 rows of the heatmap shows genes that exhibit the biggest log2fold change difference between the baseline WT (bottom left) time course and the Mutant group (bottom right). Again, this doesn't take into account the adjusted p-value.
 
 ``` r
 sessionInfo()
