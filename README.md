@@ -3,7 +3,7 @@ The fission dataset from Bioconductor is collected from an experiment where 2 gr
 
 ##### Reference: <https://f1000researchdata.s3.amazonaws.com/manuscripts/9994/54602c98-5b2c-4d9d-9004-4e1f2c4e52c6_7035_-_michael_love_v2.pdf?doi=10.12688/f1000research.7035.2>
 
-``` r
+``` r {echo=FALSE}
 library(fission)
 ```
 
@@ -215,9 +215,6 @@ ggplot(pcadata, aes(PC1, PC2, color=minute, shape=strain)) + geom_point(size=3) 
 ``` r
 library("pcaExplorer")
 ```
-
-    ## 
-
 ``` r
 groups=colData(rld)$strain
 cols <- scales::hue_pal()(2)[groups]
@@ -344,7 +341,7 @@ ggplot(time_data,aes(x=Minute, y=log2_change))+geom_point(color='#336666')+geom_
 
 ![Figure 5.The Log2 change of the mutant group over WT for gene urg3](unnamed-chunk-8-1.png)
 
-Cluster top10 significant Genes based on log2fold change values. Note that this heatmap doesn't take into account the adjusted P-values and its associated confidence in the log2fold change detected (Gene id SPAC1002.18 corresponds to the Urg3 gene).
+### Cluster top10 significant Genes based on log2fold change values. Note that this heatmap doesn't take into account the adjusted P-values and its associated confidence in the log2fold change detected (Gene id SPAC1002.18 corresponds to the Urg3 gene).
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ``` r
