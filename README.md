@@ -1,5 +1,7 @@
 The fission dataset from Bioconductor is collected from an experiment where 2 groups of fission yeast, WT and mutant (*atf21* deletion) undergo oxidative stress. RNA-seq was performed for the two groups at 6 time points to measure gene expression levels.
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+## Illumina RNA sequence processing 
+Most programs fro RNA sequencing processing and analysis are LINUX-based, so it's recommended to setup a virtual machine for this work flow. Starting from raw sequence data --> trimming low quality reads (Trimmomatic) --> alignment to reference genome, include splice alignment (HISAT2) --> convert from .sam files to .bam files, and sorted.bam (samtools) --> calculate normalized gene/isoform expression level (Cufflinks).
 
 ##### Reference: <https://f1000researchdata.s3.amazonaws.com/manuscripts/9994/54602c98-5b2c-4d9d-9004-4e1f2c4e52c6_7035_-_michael_love_v2.pdf?doi=10.12688/f1000research.7035.2>
 
